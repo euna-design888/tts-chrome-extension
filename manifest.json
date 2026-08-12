@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "소리뷰 (SoriView)",
+  "version": "1.0.0",
+  "description": "웹페이지 본문 파싱, WAI-ARIA 해석, 고대비 리더뷰 및 마우스 호버 낭독을 제공하는 저시력자 맞춤형 TTS 확장 프로그램",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "toggle-read-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "전체 본문 낭독 시작/일시정지"
+    },
+    "stop-reading": {
+      "suggested_key": {
+        "default": "Alt+Shift+X"
+      },
+      "description": "낭독 즉시 중단 (정지)"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "all_frames": true,
+      "match_about_blank": true,
+      "css": ["content/reader_overlay.css"],
+      "js": [
+        "content/parser.js",
+        "content/tts_engine.js",
+        "content/hover_speaker.js",
+        "content/reader_overlay.js",
+        "content/content_script.js"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  }
+}

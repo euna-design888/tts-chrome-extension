@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>소리뷰 (SoriView) 사이드바</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body class="dark-theme">
+  <div class="panel-container">
+    <!-- 헤더 영역 -->
+    <header class="panel-header">
+      <div class="brand">
+        <span class="icon">👁️</span>
+        <div>
+          <h1 class="panel-title">소리뷰 (SoriView)</h1>
+          <span class="badge">📌 오른쪽 고정 사이드바 · 비용 0원</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 메인 액션 버튼 그리드 -->
+    <section class="action-section">
+      <button id="btn-read-page" class="btn-primary">
+        <span class="btn-icon">📖</span>
+        <span class="btn-text">전체 본문 연속 낭독</span>
+      </button>
+      
+      <div class="action-grid">
+        <button id="btn-toggle-reader" class="btn-secondary">
+          <span class="btn-icon">🔍</span> 고대비 리더뷰
+        </button>
+        <button id="btn-stop-reading" class="btn-danger">
+          <span class="btn-icon">⏹️</span> 낭독 정지
+        </button>
+      </div>
+    </section>
+
+    <!-- ✍️ 텍스트 직접 붙여넣기 낭독 카드 -->
+    <section class="card-group">
+      <div class="card-title">✍️ 텍스트 붙여넣기 낭독 (고정 유지)</div>
+      <textarea id="txt-custom-input" class="custom-textarea" placeholder="메모장, 구글 시트, 웹페이지 등에서 복사(Ctrl+C)한 텍스트를 여기에 붙여넣으세요. 다른 작업을 수행해도 끊김 없이 낭독됩니다."></textarea>
+      <div class="action-grid" style="margin-top: 8px;">
+        <button id="btn-paste-read" class="btn-secondary">
+          📋 클립보드 자동 붙여넣기
+        </button>
+        <button id="btn-read-custom" class="btn-accent">
+          ▶️ 즉시 낭독 시작
+        </button>
+      </div>
+    </section>
+
+    <!-- 🎙️ 음성 선택 및 조절 설정 카드 -->
+    <section class="card-group">
+      <div class="card-item">
+        <div class="setting-row">
+          <span>🎙️ 음성 선택 (Voice)</span>
+        </div>
+        <select id="select-voice" class="select-voice-dropdown">
+          <option value="">음성 로딩 중...</option>
+        </select>
+      </div>
+
+      <div class="card-item">
+        <label class="toggle-switch">
+          <input type="checkbox" id="chk-hover-speak" checked>
+          <span class="slider"></span>
+          <span class="toggle-label">Shift + 클릭/드래그 낭독</span>
+        </label>
+      </div>
+
+      <div class="card-item">
+        <div class="setting-row">
+          <span>🔊 음량 (Volume)</span>
+          <span id="val-volume" class="highlight-val">100%</span>
+        </div>
+        <input type="range" id="slider-volume" class="range-slider" min="0.0" max="1.0" step="0.1" value="1.0">
+      </div>
+
+      <div class="card-item">
+        <div class="setting-row">
+          <span>⚡ 낭독 속도</span>
+          <span id="val-rate" class="highlight-val">1.0x</span>
+        </div>
+        <input type="range" id="slider-rate" class="range-slider" min="0.5" max="2.0" step="0.1" value="1.0">
+      </div>
+
+      <div class="card-item">
+        <div class="setting-row">
+          <span>🎵 음높이 (Pitch)</span>
+          <span id="val-pitch" class="highlight-val">1.0</span>
+        </div>
+        <input type="range" id="slider-pitch" class="range-slider" min="0.5" max="1.5" step="0.1" value="1.0">
+      </div>
+    </section>
+
+    <!-- ⌨️ 단축키 및 전용 기능 안내 카드 -->
+    <section class="guide-section">
+      <h2 class="guide-title">🖱️ 사이드바 작동 방식</h2>
+      <ul class="guide-list">
+        <li>
+          <span class="guide-badge">고정 사이드바</span>
+          <span>다른 웹페이지 및 메모장 작업을 해도 사이드바가 닫히지 않습니다.</span>
+        </li>
+        <li>
+          <span class="guide-badge">스팟라이트 돋보기</span>
+          <span><code>Shift + 마우스 이동</code> 커서 주변 텍스트 돋보기 확대</span>
+        </li>
+        <li>
+          <span class="guide-badge">문단/드래그 낭독</span>
+          <span><code>Shift + 좌클릭 / 드래그</code> 해당 위치/지정 영역 낭독</span>
+        </li>
+        <li>
+          <span class="guide-badge">문장 건너뛰기</span>
+          <span><code>Shift + ➔ / ⬅</code> 다음/이전 문장 건너뛰기 낭독</span>
+        </li>
+        <li>
+          <span class="guide-badge">일시정지 / 재개</span>
+          <span><code>Ctrl + Space</code> 낭독 일시정지 ↔ 이어서 낭독</span>
+        </li>
+        <li>
+          <span class="guide-badge">낭독 완전 정지</span>
+          <span><code>F2</code> 키 (낭독 즉시 완전 정지 & 초기화)</span>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

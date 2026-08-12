@@ -1,0 +1,126 @@
+/* reader_overlay.css - 저시력자 맞춤형 고대비 스킨 & 하이라이팅 CSS */
+
+/* 최신 브라우저 크롬 CSS Custom Highlight API 비파괴 선택 하이라이트 */
+::highlight(soriview-selection) {
+  background-color: #FFE600 !important;
+  color: #000000 !important;
+  text-shadow: none !important;
+}
+
+/* 일반 웹페이지 상의 낭독 단락 하이라이트 */
+.tts-active-segment {
+  background-color: #FFE600 !important;
+  color: #000000 !important;
+  padding: 3px 6px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 12px rgba(255, 230, 0, 0.95) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* -------------------------------------------------------------
+ * Reader View Overlay (가독성 독자 오버레이 레이어)
+ * ------------------------------------------------------------- */
+#tts-reader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2147483647; /* 최상단 레이어 보장 */
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  overflow: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* 고대비 테마 정의 */
+#tts-reader-overlay.theme-high-contrast-dark {
+  background-color: #000000 !important;
+  color: #FFFF00 !important; /* 검정 배경 / 노랑 글씨 */
+}
+
+#tts-reader-overlay.theme-high-contrast-yellow {
+  background-color: #0A0A0A !important;
+  color: #00FFCC !important; /* 검정 배경 / 청록 글씨 */
+}
+
+#tts-reader-overlay.theme-high-contrast-light {
+  background-color: #FFFFF0 !important;
+  color: #000000 !important; /* 크림 백색 배경 / 검정 글씨 */
+}
+
+/* 리더뷰 상단 헤더 컨트롤 바 */
+.tts-reader-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  border-bottom: 3px solid currentColor;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tts-reader-title {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.tts-reader-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.tts-reader-btn {
+  background: transparent;
+  color: inherit;
+  border: 2px solid currentColor;
+  padding: 8px 16px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tts-reader-btn:hover {
+  background-color: currentColor;
+  color: #000000;
+}
+
+.tts-reader-btn:focus {
+  outline: 4px solid #FFD700;
+}
+
+/* 리더뷰 본문 컨텐츠 영역 */
+.tts-reader-content {
+  flex: 1;
+  padding: 40px 10%;
+  overflow-y: auto;
+  line-height: 1.8;
+}
+
+.tts-reader-paragraph {
+  margin-bottom: 24px;
+  padding: 12px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.tts-reader-paragraph.active-reader-segment {
+  background-color: rgba(255, 230, 0, 0.3) !important;
+  outline: 3px solid #FFE600 !important;
+  font-weight: bold;
+}
+
+/* 하단 오디오 플레이어 제어 바 */
+.tts-reader-player {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  border-top: 3px solid currentColor;
+  background-color: rgba(0, 0, 0, 0.2);
+}
