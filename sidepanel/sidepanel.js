@@ -270,10 +270,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return chunks.filter(Boolean);
   }
 
+  let currentSpeechSessionId = 0;
+
   /**
-   * 사이드바 고정 낭독 전용 파이프라인 (Smart Polling Watchdog 탑재)
+   * 사이드바 고정 낭독 전용 파이프라인 (중복 낭독 원천 방지 단일 실행 가드 탑재)
    */
   function speakCustomTextInSidePanel(text) {
+    // 이전 발화 세션 즉시 만료 및 완전 정지
+    currentSpeechSessionId++;
+    const thisSessionId = currentSpeechSessionId;
+
     sidepanelSpeaking = false;
     activeSidepanelUtterances.clear();
     stopSidepanelWatchdog();
@@ -285,48 +291,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     sidepanelSpeaking = true;
     setSpeakingUI(true); // 버튼 붉은색 시각 피드백 적용
-    let index = 0;
-    let isChunkSpeaking = false;
 
-    // [스마트 폴링 왓치독] 100ms 주기 음성 출력 상태 감시자
+    let currentIndex = 0;
+    let isAdvancing = false; // 단일 문장 완료 시 중복 호출 방지 플래그
+
+    // [스마트 폴링 왓치독] 100ms 주기 상태 감시 및 엔진 프리징 복구
     sidepanelWatchdogTimer = setInterval(() => {
-      if (!sidepanelSpeaking) {
+      if (!sidepanelSpeaking || thisSessionId !== currentSpeechSessionId) {
         stopSidepanelWatchdog();
         setSpeakingUI(false);
         return;
       }
 
       if (window.speechSynthesis) {
+        // 일시정지 상태 복구
         if (window.speechSynthesis.paused) {
           try { window.speechSynthesis.resume(); } catch (e) {}
         }
 
-        // 현재 문장의 발화가 완료되었음을 폴더가 감지하면 다음 문장으로 100% 확실 연결
-        if (isChunkSpeaking && !window.speechSynthesis.speaking) {
-          console.log(`[SoriView-Watchdog] 🔄 문장 ${index + 1}번 발화 완료 감지 -> 다음 문장 자동 진행`);
-          isChunkSpeaking = false;
-          index++;
-          setTimeout(() => {
-            speakNextChunk();
-          }, 80);
+        // 혹시 onend가 유실되었더라도 발화가 끝났고 아직 다음 문장으로 넘어가지 않은 경우에만 단 1회 진행
+        if (!window.speechSynthesis.speaking && !isAdvancing) {
+          console.log(`[SoriView-Watchdog] 🔄 문장 ${currentIndex + 1}번 발화 완료 감지 -> 다음 문장 자동 진행`);
+          advanceToNextChunk('watchdog');
         }
       }
     }, 100);
 
-    function speakNextChunk() {
+    // 다음 청크로의 전환을 단 1회만 보장하는 원자적 가드 함수
+    function advanceToNextChunk(triggerSource) {
+      if (isAdvancing) return; // 이미 다음 문장으로 전환 중이면 중복 실행 차단!
+      if (!sidepanelSpeaking || thisSessionId !== currentSpeechSessionId) return;
+
+      isAdvancing = true;
       clearSidepanelSafetyTimeout();
 
-      if (!sidepanelSpeaking || index >= rawChunks.length) {
-        console.log('[SoriView-SidePanel] 🏁 커스텀 텍스트 전체 연속 낭독 완수!');
+      currentIndex++;
+      setTimeout(() => {
+        if (thisSessionId === currentSpeechSessionId && sidepanelSpeaking) {
+          speakCurrentChunk();
+        }
+      }, 60);
+    }
+
+    function speakCurrentChunk() {
+      clearSidepanelSafetyTimeout();
+      isAdvancing = false;
+
+      if (!sidepanelSpeaking || thisSessionId !== currentSpeechSessionId || currentIndex >= rawChunks.length) {
+        console.log('[SoriView-SidePanel] 🏁 커스텀 텍스트 1회 전체 연속 낭독 완료!');
         sidepanelSpeaking = false;
-        setSpeakingUI(false); // 버튼 색상 원복
+        setSpeakingUI(false);
         activeSidepanelUtterances.clear();
         stopSidepanelWatchdog();
         return;
       }
 
-      const sentenceText = rawChunks[index];
-      console.log(`[SoriView-SidePanel] 🔊 [문장 ${index + 1}/${rawChunks.length}]: "${sentenceText.substring(0, 30)}..."`);
+      const sentenceText = rawChunks[currentIndex];
+      console.log(`[SoriView-SidePanel] 🔊 [문장 ${currentIndex + 1}/${rawChunks.length}]: "${sentenceText.substring(0, 30)}..."`);
 
       const utt = new SpeechSynthesisUtterance(sentenceText);
       activeSidepanelUtterances.add(utt);
@@ -342,48 +363,47 @@ document.addEventListener('DOMContentLoaded', () => {
         if (found) utt.voice = found;
       }
 
+      // 안전 타임아웃
       const calculateTimeout = () => Math.max(45000, Math.ceil((sentenceText.length * 800) / currentRate) + 25000);
       sidepanelSafetyTimeoutTimer = setTimeout(() => {
-        if (!sidepanelSpeaking) return;
+        if (!sidepanelSpeaking || thisSessionId !== currentSpeechSessionId) return;
         if (window.speechSynthesis && window.speechSynthesis.speaking) {
           try { window.speechSynthesis.resume(); } catch (e) {}
           return;
         }
-        isChunkSpeaking = false;
-        index++;
-        setTimeout(() => { speakNextChunk(); }, 80);
+        advanceToNextChunk('safetyTimeout');
       }, calculateTimeout());
 
       utt.onstart = () => {
-        if (!sidepanelSpeaking) return;
-        isChunkSpeaking = true;
+        if (!sidepanelSpeaking || thisSessionId !== currentSpeechSessionId) return;
       };
 
       utt.onend = () => {
         clearSidepanelSafetyTimeout();
-        if (!sidepanelSpeaking) return;
-        if (isChunkSpeaking) {
-          isChunkSpeaking = false;
-          index++;
-          setTimeout(() => { speakNextChunk(); }, 80);
-        }
+        activeSidepanelUtterances.delete(utt);
+        if (!sidepanelSpeaking || thisSessionId !== currentSpeechSessionId) return;
+        advanceToNextChunk('onend');
       };
 
       utt.onerror = (e) => {
         clearSidepanelSafetyTimeout();
-        if (!sidepanelSpeaking) return;
+        activeSidepanelUtterances.delete(utt);
+        if (!sidepanelSpeaking || thisSessionId !== currentSpeechSessionId) return;
         if (e.error === 'interrupted' || e.error === 'canceled') return;
         console.warn('[SoriView-SidePanel] 발화 에러:', e);
-        isChunkSpeaking = false;
-        index++;
-        setTimeout(() => { speakNextChunk(); }, 80);
+        advanceToNextChunk('onerror');
       };
 
-      isChunkSpeaking = true;
-      try { window.speechSynthesis.speak(utt); } catch (e) {}
+      try {
+        window.speechSynthesis.speak(utt);
+      } catch (e) {
+        console.error('[SoriView-SidePanel] speak 호출 실패:', e);
+        advanceToNextChunk('speakCatch');
+      }
     }
 
-    speakNextChunk();
+    // 첫 번째 문장 발화 시작
+    speakCurrentChunk();
   }
 
   function stopAllReading() {

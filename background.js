@@ -77,6 +77,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true });
       return true;
 
+    default:
+      return false;
+  }
+});
+
+// 확장 프로그램 아이콘 클릭 시 오른쪽 사이드패널 즉시 오픈 (Fallback 보장)
+if (chrome.action && chrome.action.onClicked) {
+  chrome.action.onClicked.addListener((tab) => {
+    if (chrome.sidePanel && chrome.sidePanel.open) {
+      chrome.sidePanel.open({ windowId: tab.windowId }).catch((err) => {
+        console.warn('[SoriView-Background] SidePanel 열기 실패:', err);
+      });
+    }
+  });
+}
+
 // 크롬 단축키 (Chrome Global Commands) 이벤트 수신기
 chrome.commands.onCommand.addListener((command) => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -89,3 +105,4 @@ chrome.commands.onCommand.addListener((command) => {
     }
   });
 });
+
