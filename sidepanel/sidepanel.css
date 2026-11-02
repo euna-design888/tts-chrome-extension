@@ -263,6 +263,25 @@ body.dark-theme::-webkit-scrollbar-thumb {
   cursor: pointer;
 }
 
+/* 낭독 속도 프리셋 버튼 */
+.rate-presets {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.rate-preset {
+  padding: 6px 0;
+  font-size: 12px;
+}
+
+.rate-preset.active {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  background-color: rgba(255, 215, 0, 0.12);
+}
+
 /* 토글 스위치 */
 .toggle-switch {
   display: flex;

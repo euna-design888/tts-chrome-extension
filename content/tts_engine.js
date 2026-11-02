@@ -74,6 +74,11 @@ window.TTSEngine = class TTSEngine {
   }
 
   updateSettings(newSettings) {
+    // 낭독 중 속도가 바뀌면 멈춘 단어 위치부터 새 속도로 즉시 이어 읽기 (pause -> resume 재사용)
+    const rateChanged = newSettings.rate !== undefined && newSettings.rate !== this.settings.rate;
+    const restartLive = rateChanged && this.isPlaying && !this.isPaused;
+    if (restartLive) this.togglePauseResume(); // 위치 추정은 이전 속도 기준이어야 하므로 병합 전에 호출
+
     this.settings = { ...this.settings, ...newSettings };
     if (this.synth && newSettings.voiceName) {
       const found = this.synth.getVoices().find(v =>
@@ -81,6 +86,8 @@ window.TTSEngine = class TTSEngine {
       );
       if (found) this.selectedVoice = found;
     }
+
+    if (restartLive) this.togglePauseResume();
   }
 
   getNormalizedVolume(voice, userVolume) {
