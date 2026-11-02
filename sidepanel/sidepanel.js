@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeSidepanelUtterances = new Set();
   let sidepanelWatchdogTimer = null;
   let sidepanelSafetyTimeoutTimer = null;
+  let restartSidepanelChunk = null; // 낭독 중 속도 변경 시 현재 문장을 새 속도로 다시 읽는 훅
 
   function stopSidepanelWatchdog() {
     if (sidepanelWatchdogTimer) {
@@ -151,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sliderPitch.value = currentSettings.pitch;
     if (sliderVolume) sliderVolume.value = currentSettings.volume !== undefined ? currentSettings.volume : 1.0;
 
-    valRate.innerText = `${currentSettings.rate}x`;
+    syncRateUI();
     valPitch.innerText = `${currentSettings.pitch}`;
     if (valVolume) valVolume.innerText = `${Math.round((currentSettings.volume !== undefined ? currentSettings.volume : 1.0) * 100)}%`;
 
@@ -160,6 +161,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentSettings.voiceName && selectVoice.options.length > 0) {
       selectVoice.value = currentSettings.voiceName;
     }
+  }
+
+  function syncRateUI() {
+    valRate.innerText = `${currentSettings.rate}x`;
+    document.querySelectorAll('.rate-preset').forEach(btn => {
+      btn.classList.toggle('active', parseFloat(btn.dataset.rate) === currentSettings.rate);
+    });
+  }
+
+  // 속도 확정: 저장(콘텐츠 스크립트 엔진은 SETTINGS_UPDATED로 즉시 재시작) + 사이드패널 자체 낭독도 즉시 반영
+  function applyRate() {
+    syncRateUI();
+    saveSettings();
+    if (restartSidepanelChunk) restartSidepanelChunk();
   }
 
   function saveSettings() {
@@ -316,6 +331,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }, 100);
+
+    // 속도 변경 시 현재 문장을 새 설정으로 다시 발화 (isAdvancing으로 cancel 콜백/왓치독의 다음 문장 진행 차단)
+    // ponytail: 문장 처음부터 다시 읽음. 단어 위치 이어읽기가 필요하면 tts_engine의 시간 추정 방식 이식
+    restartSidepanelChunk = () => {
+      if (!sidepanelSpeaking || thisSessionId !== currentSpeechSessionId) return;
+      isAdvancing = true;
+      clearSidepanelSafetyTimeout();
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+      setTimeout(() => {
+        if (thisSessionId === currentSpeechSessionId && sidepanelSpeaking) {
+          speakCurrentChunk();
+        }
+      }, 60);
+    };
 
     // 다음 청크로의 전환을 단 1회만 보장하는 원자적 가드 함수
     function advanceToNextChunk(triggerSource) {
@@ -508,10 +537,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 드래그 중에는 표시만 갱신, 손을 뗀 순간(change) 1회만 저장·재시작 (드래그마다 재시작하면 더듬거림)
   sliderRate.addEventListener('input', (e) => {
     currentSettings.rate = parseFloat(e.target.value);
-    valRate.innerText = `${currentSettings.rate}x`;
-    saveSettings();
+    syncRateUI();
+  });
+  sliderRate.addEventListener('change', applyRate);
+
+  document.querySelectorAll('.rate-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentSettings.rate = parseFloat(btn.dataset.rate);
+      sliderRate.value = currentSettings.rate;
+      applyRate();
+    });
   });
 
   sliderPitch.addEventListener('input', (e) => {
